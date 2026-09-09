@@ -1,84 +1,121 @@
-﻿using System;
+using Newtonsoft.Json;
+using System;
 
 namespace SupportTicketSystem
 {
+    public enum Priority
+    {
+        Low,
+        Medium,
+        High
+    }
+
+    public enum Status
+    {
+        Open,
+        InProgress,
+        Closed
+    }
+
     public class Ticket
     {
-        private int id;
-        private string title;
-        private string description;
-        private string customerName;
-        private string priority;
-        private string status;
-        private DateTime creationDate;
+        public int Id { get; private set; }
+        public string Title { get; private set; }
+        public string Description { get; private set; }
+        public string CustomerName { get; private set; }
+        public Priority Priority { get; private set; }
+        public Status Status { get; private set; }
+        public DateTime CreationDate { get; private set; }
 
         public Ticket(
             int id,
             string title,
             string description,
             string customerName,
-            string priority,
-            string status  )
+            Priority priority,
+            Status status)
         {
-            this.id = id;
-
-            if (ValidateTitle(title))
+            if (!TicketValidator.ValidateTitle(title))
             {
-                this.title = title;
+                throw new ArgumentException("Title cannot be empty.");
             }
-        
-            this.description = description;
-            this.customerName = customerName;
-            this.priority = priority;
-            this.status = status;
-            this.creationDate = DateTime.Now;
+
+            Id = id;
+            Title = title;
+            Description = description;
+            CustomerName = customerName;
+            Priority = priority;
+            Status = status;
+            CreationDate = DateTime.Now;
         }
 
-        private bool ValidateTitle(string title)
+        // Used only by TicketStorage when loading tickets back from disk,
+        // so the original CreationDate is preserved instead of being reset to now.
+        [JsonConstructor]
+        public Ticket(
+            int id,
+            string title,
+            string description,
+            string customerName,
+            Priority priority,
+            Status status,
+            DateTime creationDate)
         {
-            return !string.IsNullOrWhiteSpace(title);
+            Id = id;
+            Title = title;
+            Description = description;
+            CustomerName = customerName;
+            Priority = priority;
+            Status = status;
+            CreationDate = creationDate;
         }
 
-
-        private bool ValidatePriority(string priority)
+        public void UpdateTitle(string title)
         {
-            return priority == "Low" ||
-                   priority == "Medium" ||
-                   priority == "High";
+            if (!TicketValidator.ValidateTitle(title))
+            {
+                throw new ArgumentException("Title cannot be empty.");
+            }
+            Title = title;
         }
 
-
-
-
-        private bool ValidateStatus(string status)
+        public void UpdateDescription(string description)
         {
-            return status == "Open" ||
-                   status == "In Progress" ||
-                   status == "Closed";
+            Description = description;
         }
-                
 
+        public void UpdatePriority(Priority priority)
+        {
+            Priority = priority;
+        }
+
+        public void UpdateStatus(Status status)
+        {
+            Status = status;
+        }
 
         public void CloseTicket()
         {
-            status = "Closed";
+            Status = Status.Closed;
         }
-
-
 
         public void DisplayTicket()
         {
-            Console.WriteLine("Ticket data");
-            Console.WriteLine($"ID          : {id}");
-            Console.WriteLine($"Title       : {title}");
-            Console.WriteLine($"Description : {description}");
-            Console.WriteLine($"Customer    : {customerName}");
-            Console.WriteLine($"Priority    : {priority}");
-            Console.WriteLine($"Status      : {status}");
-            Console.WriteLine($"Created Date: {creationDate}");
+            Console.WriteLine("----------------------------------");
+            Console.WriteLine($"ID          : {Id}");
+            Console.WriteLine($"Title       : {Title}");
+            Console.WriteLine($"Description : {Description}");
+            Console.WriteLine($"Customer    : {CustomerName}");
+            Console.WriteLine($"Priority    : {Priority}");
+            Console.WriteLine($"Status      : {Status}");
+            Console.WriteLine($"Created     : {CreationDate}");
+            Console.WriteLine("----------------------------------");
         }
 
-
+        // One-line summary row used by List/Search/Sort output.
+        public string ToSummaryLine()
+        {
+            return $"#{Id,-4} {Title,-25} {Priority,-8} {Status,-12} {CreationDate:yyyy-MM-dd HH:mm}";
+        }
     }
-     
 }
